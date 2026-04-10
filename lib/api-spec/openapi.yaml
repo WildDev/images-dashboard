@@ -1,0 +1,311 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: images
+    description: Image management operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /images:
+    get:
+      operationId: listImages
+      tags: [images]
+      summary: List all images
+      description: Returns a list of all tracked images with their metadata and status
+      responses:
+        "200":
+          description: List of images
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Image"
+
+  /images/stats:
+    get:
+      operationId: getImageStats
+      tags: [images]
+      summary: Get image statistics
+      description: Returns dashboard summary counts grouped by status
+      responses:
+        "200":
+          description: Image statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageStats"
+
+  /images/add:
+    post:
+      operationId: addExternalImage
+      tags: [images]
+      summary: Add image from external URL
+      description: Schedules an image for download from the provided external URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddExternalImageBody"
+      responses:
+        "201":
+          description: Image scheduled
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageId"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /images/upload:
+    post:
+      operationId: uploadImage
+      tags: [images]
+      summary: Upload image file
+      description: Uploads an image file directly (JPEG, PNG, GIF, BMP, WEBP)
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadImageBody"
+      responses:
+        "201":
+          description: Image uploaded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageId"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /images/delete:
+    post:
+      operationId: deleteImage
+      tags: [images]
+      summary: Delete an image
+      description: Deletes an image and all its processed versions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DeleteImageBody"
+      responses:
+        "200":
+          description: Deleted successfully
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+
+  /images/find/{id}:
+    get:
+      operationId: findImage
+      tags: [images]
+      summary: Retrieve processed image binary
+      description: Returns the image binary with optional width/height for resized versions
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: width
+          in: query
+          required: false
+          schema:
+            type: integer
+        - name: height
+          in: query
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Image binary
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/bmp:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ImageStatus:
+      type: string
+      enum:
+        - NEW
+        - QUEUED
+        - PROCESSED
+        - FAILED
+        - EXPIRED
+
+    Image:
+      type: object
+      properties:
+        id:
+          type: string
+        sourceUrl:
+          type: string
+        width:
+          type: integer
+          nullable: true
+        height:
+          type: integer
+          nullable: true
+        status:
+          $ref: "#/components/schemas/ImageStatus"
+        contentType:
+          type: string
+          nullable: true
+        multiSize:
+          type: boolean
+        added:
+          type: string
+          format: date-time
+        processed:
+          type: string
+          format: date-time
+          nullable: true
+        sourceId:
+          type: string
+          nullable: true
+      required:
+        - id
+        - status
+        - multiSize
+        - added
+
+    ImageStats:
+      type: object
+      properties:
+        total:
+          type: integer
+        processed:
+          type: integer
+        queued:
+          type: integer
+        failed:
+          type: integer
+        new:
+          type: integer
+        expired:
+          type: integer
+      required:
+        - total
+        - processed
+        - queued
+        - failed
+        - new
+        - expired
+
+    ImageId:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+
+    AddExternalImageBody:
+      type: object
+      properties:
+        url:
+          type: string
+          format: uri
+        multiSize:
+          type: boolean
+      required:
+        - url
+        - multiSize
+
+    UploadImageBody:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        multiSize:
+          type: boolean
+      required:
+        - file
+        - multiSize
+
+    DeleteImageBody:
+      type: object
+      properties:
+        id:
+          type: string
+      required:
+        - id
+
+    ApiError:
+      type: object
+      properties:
+        message:
+          type: string
+        errors:
+          type: array
+          items:
+            type: string
+      required:
+        - message

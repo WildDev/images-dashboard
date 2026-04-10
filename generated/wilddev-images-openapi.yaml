@@ -1,0 +1,448 @@
+openapi: 3.1.0
+info:
+  title: WildDev Images API
+  version: 1.0.0
+  description: >
+    A reactive image processing service that allows uploading, resizing, cropping,
+    and serving images across multiple device resolutions. Supports both direct file
+    uploads and external URL references. Provides webhook notifications when image
+    processing completes.
+  license:
+    name: Apache-2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  contact:
+    name: WildDev
+    url: https://github.com/WildDev/images
+
+servers:
+  - url: /
+    description: Default server
+
+tags:
+  - name: images
+    description: Image upload, retrieval, and deletion operations
+  - name: webhooks
+    description: Webhook callback payloads sent by the service
+
+paths:
+  /images/add:
+    post:
+      operationId: addExternalImage
+      tags: [images]
+      summary: Add an image from an external URL
+      description: >
+        Schedules an image for download from the provided external URL.
+        Returns a generated image ID immediately. The image will be processed
+        asynchronously and a webhook will be sent once it is ready.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExternalImageAddRequest"
+      responses:
+        "201":
+          description: Image download scheduled successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdResponse"
+        "400":
+          description: Validation error (invalid URL or missing fields)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /images/upload:
+    post:
+      operationId: uploadImage
+      tags: [images]
+      summary: Upload an image file
+      description: >
+        Uploads an image file directly. Supported formats include JPEG, PNG, GIF,
+        BMP, and WebP. Returns a generated image ID. The image will be processed
+        asynchronously (resized/cropped based on configured sizes) and a webhook
+        will be sent once processing completes.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ImageUploadRequest"
+      responses:
+        "201":
+          description: Image uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IdResponse"
+        "400":
+          description: Validation error (unsupported format, empty file, size limit exceeded, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+  /images/find/{id}:
+    get:
+      operationId: findImage
+      tags: [images]
+      summary: Retrieve a processed image
+      description: >
+        Returns the image binary data for the given ID. Optionally specify width
+        and/or height to retrieve a specific resized or cropped version. If no
+        dimensions are provided, the original processed image is returned. The
+        response Content-Type header reflects the image format (e.g. image/jpeg).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The image ID (MongoDB ObjectId string)
+          schema:
+            type: string
+            example: "650f35128d400f39c6a46ee2"
+        - name: width
+          in: query
+          required: false
+          description: Desired image width in pixels
+          schema:
+            type: integer
+            minimum: 1
+            example: 1024
+        - name: height
+          in: query
+          required: false
+          description: Desired image height in pixels
+          schema:
+            type: integer
+            minimum: 1
+            example: 768
+      responses:
+        "200":
+          description: Image found and returned
+          content:
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/gif:
+              schema:
+                type: string
+                format: binary
+            image/bmp:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: Image not found
+
+  /images/delete:
+    post:
+      operationId: deleteImage
+      tags: [images]
+      summary: Delete an image
+      description: >
+        Deletes an image and all its processed versions (resized/cropped copies)
+        from the system. The deletion is processed asynchronously via a message queue.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageDeleteRequest"
+      responses:
+        "200":
+          description: Image deletion accepted
+        "400":
+          description: Validation error (missing or blank ID)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ValidationError"
+
+components:
+  schemas:
+    ExternalImageAddRequest:
+      type: object
+      description: Request to add an image from an external URL
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The external URL of the image to download
+          example: "https://example.com/photos/landscape.jpg"
+        multiSize:
+          type: boolean
+          description: >
+            Whether to generate multiple size versions of the image
+            (resized and/or cropped copies based on configured sizes)
+      required:
+        - url
+        - multiSize
+
+    ImageUploadRequest:
+      type: object
+      description: Request to upload an image file directly
+      properties:
+        file:
+          type: string
+          format: binary
+          description: The image file to upload (JPEG, PNG, GIF, BMP, or WebP)
+        multiSize:
+          type: boolean
+          description: >
+            Whether to generate multiple size versions of the image
+            (resized and/or cropped copies based on configured sizes)
+      required:
+        - file
+        - multiSize
+
+    ImageDeleteRequest:
+      type: object
+      description: Request to delete an image by its ID
+      properties:
+        id:
+          type: string
+          description: The image ID to delete
+          example: "650f35128d400f39c6a46ee2"
+      required:
+        - id
+
+    IdResponse:
+      type: object
+      description: Response containing the generated image ID
+      properties:
+        id:
+          type: string
+          description: The unique image identifier (MongoDB ObjectId)
+          example: "650f35128d400f39c6a46ee2"
+      required:
+        - id
+
+    ValidationError:
+      type: object
+      description: Spring validation error response
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: When the error occurred
+        status:
+          type: integer
+          description: HTTP status code
+          example: 400
+        error:
+          type: string
+          description: HTTP error reason phrase
+          example: "Bad Request"
+        errors:
+          type: array
+          description: List of field-level validation errors
+          items:
+            $ref: "#/components/schemas/FieldError"
+        path:
+          type: string
+          description: The request path
+          example: "/images/add"
+
+    FieldError:
+      type: object
+      description: A single field validation error
+      properties:
+        field:
+          type: string
+          description: The field that failed validation
+          example: "url"
+        rejectedValue:
+          description: The value that was rejected
+        defaultMessage:
+          type: string
+          description: The validation error message
+          example: "Not a URL"
+
+    Image:
+      type: object
+      description: Internal image entity stored in MongoDB
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+          example: "650f35128d400f39c6a46ee2"
+        sourceUrl:
+          type: string
+          format: uri
+          description: Original external URL (if added via /images/add)
+          example: "https://example.com/photos/landscape.jpg"
+        width:
+          type: integer
+          description: Image width in pixels
+          example: 1920
+        height:
+          type: integer
+          description: Image height in pixels
+          example: 1080
+        status:
+          $ref: "#/components/schemas/ImageStatus"
+        contentType:
+          type: string
+          description: MIME type of the image
+          example: "image/jpeg"
+        multiSize:
+          type: boolean
+          description: Whether multiple size versions were requested
+        added:
+          type: string
+          format: date-time
+          description: When the image was added
+        expires:
+          type: string
+          format: date-time
+          description: When the image record expires
+        processed:
+          type: string
+          format: date-time
+          description: When the image finished processing
+        sourceId:
+          type: string
+          description: GridFS file ID of the source image data
+      required:
+        - id
+        - status
+        - multiSize
+        - added
+
+    ImageStatus:
+      type: string
+      description: Processing status of an image
+      enum:
+        - NEW
+        - QUEUED
+        - PROCESSED
+        - FAILED
+        - EXPIRED
+
+    ImageTaskType:
+      type: string
+      description: Type of image processing task
+      enum:
+        - CROP
+        - RESIZE
+
+    ImageType:
+      type: string
+      description: Supported image formats
+      enum:
+        - BMP
+        - GIF
+        - JPEG
+        - PNG
+        - WEBP
+
+    ResizeSize:
+      type: object
+      description: Configuration for a resize operation target size
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        width:
+          type: integer
+          description: Target width in pixels
+          example: 320
+        height:
+          type: integer
+          description: Target height in pixels
+          example: 240
+        scale:
+          type: number
+          format: float
+          description: Scale factor for resizing
+          example: 0.5
+
+    CropSize:
+      type: object
+      description: Configuration for a crop operation target size
+      properties:
+        id:
+          type: string
+          description: MongoDB ObjectId
+        width:
+          type: integer
+          description: Target width in pixels
+          example: 320
+        height:
+          type: integer
+          description: Target height in pixels
+          example: 240
+        ratio:
+          type: number
+          format: float
+          description: >
+            Aspect ratio for cropping. The image is first resized to cover the
+            target dimensions, then cropped to this ratio.
+          example: 1.35
+
+    WebhookPayload:
+      type: object
+      description: >
+        Webhook payload sent to the configured webhook URL when an image
+        finishes processing (either successfully or with failure)
+      properties:
+        id:
+          type: string
+          description: Webhook record ID
+        type:
+          $ref: "#/components/schemas/WebhookType"
+        status:
+          $ref: "#/components/schemas/WebhookStatus"
+        added:
+          type: string
+          format: date-time
+          description: When the webhook was created
+        expires:
+          type: string
+          format: date-time
+          description: When the webhook expires
+        sent:
+          type: string
+          format: date-time
+          description: When the webhook was delivered
+        meta:
+          $ref: "#/components/schemas/ImageReference"
+
+    WebhookType:
+      type: string
+      description: Type of webhook event
+      enum:
+        - IMAGE_READY
+        - IMAGE_FAILED
+
+    WebhookStatus:
+      type: string
+      description: Delivery status of a webhook
+      enum:
+        - NEW
+        - QUEUED
+        - SENT
+        - FAILED
+        - EXPIRED
+
+    ImageReference:
+      type: object
+      description: Webhook metadata containing the related image ID
+      properties:
+        imageId:
+          type: string
+          description: The ID of the image this webhook relates to
+          example: "650f35128d400f39c6a46ee2"
+      required:
+        - imageId
