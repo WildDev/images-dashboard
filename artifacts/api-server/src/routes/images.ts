@@ -180,6 +180,11 @@ router.get("/images/find/:id", async (req, res): Promise<void> => {
   const height = queryParams.success ? queryParams.data.height : undefined;
 
   if (!IMAGES_SERVICE_URL) {
+    const [row] = await db.select({ sourceUrl: imagesTable.sourceUrl }).from(imagesTable).where(eq(imagesTable.id, params.data.id));
+    if (row?.sourceUrl) {
+      res.redirect(row.sourceUrl);
+      return;
+    }
     res.status(503).json({ message: "IMAGES_SERVICE_URL is not configured" });
     return;
   }

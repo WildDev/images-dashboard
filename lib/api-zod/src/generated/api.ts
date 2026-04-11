@@ -21,7 +21,7 @@ export const HealthCheckResponse = zod.object({
  */
 export const ListImagesResponseItem = zod.object({
   id: zod.string(),
-  sourceUrl: zod.string().optional(),
+  sourceUrl: zod.string().nullish(),
   width: zod.number().nullish(),
   height: zod.number().nullish(),
   status: zod.enum(["NEW", "QUEUED", "PROCESSED", "FAILED", "EXPIRED"]),
