@@ -2,13 +2,9 @@
 
 A modern, reactive management dashboard for the [WildDev/images](https://github.com/WildDev/images) Java image-processing service.
 
----
-
 ### Screenshot
 
 ![Images Dashboard — light theme](screenshots/dashboard-light.jpg)
-
----
 
 ### Get started
 
@@ -59,13 +55,9 @@ pnpm --filter @workspace/images-dashboard run dev
 
 Open the printed local URL in your browser.
 
----
-
 ### Credits
 
 Built with [Replit](https://replit.com).
-
----
 
 ### License
 
