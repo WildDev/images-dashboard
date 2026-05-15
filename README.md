@@ -24,7 +24,7 @@ Configure environment variables:
 
 ```dotenv
 # URL of a running WildDev/images service instance
-IMAGES_SERVICE_URL=http://localhost:8000
+IMAGES_SERVICE_URL=http://images:8080
 
 # Required — secret used for Express session signing
 SESSION_SECRET=change_me_to_something_random
@@ -50,7 +50,7 @@ Alternatively, build and run with Docker:
 docker build -t images-dashboard .
 docker run -p 8080:8080 \
   -e SESSION_SECRET=change_me_to_something_random \
-  -e IMAGES_SERVICE_URL=http://localhost:8000 \
+  -e IMAGES_SERVICE_URL=http://images:8080 \
   images-dashboard
 ```
 
