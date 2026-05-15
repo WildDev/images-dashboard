@@ -26,6 +26,5 @@ COPY --from=builder /app/artifacts/images-dashboard/dist/public/ ./dist/public/
 
 ENV NODE_ENV=production
 ENV PORT=8080
-EXPOSE 8080
 
-CMD ["node", "--enable-source-maps", "dist/index.mjs"]
+CMD ["node", "dist/index.mjs"]
