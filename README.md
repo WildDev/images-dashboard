@@ -4,7 +4,7 @@ A modern, reactive management dashboard for the [WildDev/images](https://github.
 
 ### Screenshot
 
-![Images Dashboard — light theme](screenshots/dashboard-light.jpg)
+![Images Dashboard](screenshots/dashboard-light.jpg)
 
 ### Get started
 
