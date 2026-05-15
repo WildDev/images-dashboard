@@ -1,6 +1,6 @@
 # Images Dashboard
 
-A modern, reactive management dashboard for the [WildDev/images](https://github.com/WildDev/images) Java image-processing service.
+A modern, reactive management dashboard for the [WildDev/images](https://github.com/WildDev/images) image-processing service.
 
 ### Screenshot
 
