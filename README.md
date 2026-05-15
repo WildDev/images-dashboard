@@ -23,7 +23,7 @@ pnpm install
 Configure environment variables:
 
 ```dotenv
-# URL of a running WildDev/images Java service instance
+# URL of a running WildDev/images service instance
 IMAGES_SERVICE_URL=http://localhost:8000
 
 # Required — secret used for Express session signing
