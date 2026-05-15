@@ -44,7 +44,7 @@ pnpm --filter @workspace/images-dashboard run dev
 
 Open the printed local URL in your browser.
 
-Docker:
+Alternatively, build and run with Docker:
 
 ```bash
 docker build -t images-dashboard .
