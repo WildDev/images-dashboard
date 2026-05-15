@@ -27,7 +27,7 @@ Configure environment variables:
 IMAGES_SERVICE_URL=http://images:8080
 
 # Required — secret used for Express session signing
-SESSION_SECRET=change_me_to_something_random
+SESSION_SECRET=*random*
 ```
 
 Start the API server:
@@ -49,7 +49,7 @@ Alternatively, build and run with Docker:
 ```bash
 docker build -t images-dashboard .
 docker run -p 8080:8080 \
-  -e SESSION_SECRET=change_me_to_something_random \
+  -e SESSION_SECRET=*random* \
   -e IMAGES_SERVICE_URL=http://images:8080 \
   images-dashboard
 ```
