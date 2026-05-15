@@ -27,7 +27,7 @@ export default function Dashboard() {
               <LayoutGrid className="w-5 h-5 text-primary" />
             </div>
             <div>
-              <h1 className="font-semibold text-sm">WildDev Images</h1>
+              <h1 className="font-semibold text-sm">Images</h1>
               <p className="text-[10px] font-mono text-muted-foreground tracking-wider uppercase">Production Dashboard</p>
             </div>
           </div>
