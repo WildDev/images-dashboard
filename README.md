@@ -44,6 +44,16 @@ pnpm --filter @workspace/images-dashboard run dev
 
 Open the printed local URL in your browser.
 
+Alternatively, build and run with Docker:
+
+```bash
+docker build -t images-dashboard .
+docker run -p 8080:8080 \
+  -e SESSION_SECRET=change_me_to_something_random \
+  -e IMAGES_SERVICE_URL=http://localhost:8000 \
+  images-dashboard
+```
+
 > [!NOTE]
 > When `IMAGES_SERVICE_URL` is not set the dashboard runs in local-only mode: images are tracked in memory and processed thumbnails are not available.
 
